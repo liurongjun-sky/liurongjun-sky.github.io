@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AIGC文旅特攻 | 限时挑战赛</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Poppins', 'Segoe UI', 'Orbitron', system-ui, -apple-system, 'Inter', monospace;
+            padding: 20px;
+        }
+
+        /* 游戏主容器 */
+        .game-container {
+            max-width: 780px;
+            width: 100%;
+            background: rgba(10, 20, 30, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 64px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(0, 255, 255, 0.1) inset, 0 0 20px rgba(0, 255, 255, 0.2);
+            padding: 24px 28px 36px;
+            transition: all 0.2s;
+        }
+
+        /* 头部信息栏 */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 24px;
+            background: #050b14aa;
+            border-radius: 80px;
+            padding: 12px 24px;
+            border-bottom: 1px solid cyan;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .score-box, .question-counter, .timer-box {
+            background: #00000066;
+            backdrop-filter: blur(4px);
+            padding: 6px 18px;
+            border-radius: 60px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .score-box span, .question-counter span, .timer-box span {
+            color: #8ecae6;
+            font-size: 0.85rem;
+            margin-right: 8px;
+        }
+
+        .score-value, .q-num, .timer-value {
+            color: #f0f9ff;
+            font-size: 1.6rem;
+            font-weight: 800;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 6px #0ff;
+        }
+
+        .timer-box {
+            background: #001a33cc;
+            border: 1px solid #ffaa44;
+            transition: 0.1s;
+        }
+
+        .timer-value {
+            color: #ffcc77;
+            text-shadow: 0 0 5px #ff9900;
+        }
+
+        /* 紧张进度条 */
+        .timer-bar-container {
+            width: 100%;
+            background: #1e2a3a;
+            border-radius: 40px;
+            height: 8px;
+            margin-top: 10px;
+            margin-bottom: 32px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px #00000055;
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #33ffcc, #00aaff);
+            border-radius: 40px;
+            transition: width 0.1s linear;
+        }
+
+        .timer-bar.urgent {
+            background: linear-gradient(90deg, #ff4444, #ffaa00);
+            box-shadow: 0 0 8px red;
+        }
+
+        /* 题目卡片 */
+        .question-card {
+            background: #0b1422cc;
+            border-radius: 48px;
+            padding: 28px 22px;
+            margin: 16px 0 28px 0;
+            border: 1px solid #2affee66;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            transition: all 0.2s;
+        }
+
+        .question-text {
+            font-size: 1.65rem;
+            font-weight: 700;
+            line-height: 1.35;
+            color: #eef5ff;
+            text-shadow: 0 2px 3px black;
+            letter-spacing: -0.2px;
+        }
+
+        /* 选项网格 */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin: 28px 0 20px;
+        }
+
+        .option-btn {
+            background: #101a2b;
+            border: 1.5px solid #2c5f7a;
+            border-radius: 60px;
+            padding: 14px 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #c1e4ff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(4px);
+            font-family: 'Segoe UI', 'Inter', system-ui;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #1f3b55;
+            border-color: #0ff;
+            transform: scale(0.98);
+            box-shadow: 0 0 10px #0ff4;
+        }
+
+        .option-prefix {
+            font-weight: 800;
+            font-size: 1.4rem;
+            width: 36px;
+            text-align: center;
+            color: #2affdd;
+        }
+
+        .option-text {
+            flex: 1;
+        }
+
+        /* 禁用选项样式 */
+        .option-btn.disabled-opt, .option-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.1);
+        }
+
+        /* 反馈条 */
+        .feedback {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 40px;
+            background: #00000066;
+            letter-spacing: 1px;
+        }
+
+        /* 控制按钮 */
+        .control {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .restart-btn {
+            background: linear-gradient(95deg, #ff416c, #ff4b2b);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 0 12px #ff4b2b;
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .start-btn {
+            background: #00adb5;
+            font-size: 1.9rem;
+            padding: 16px 48px;
+            border-radius: 80px;
+            font-weight: bold;
+            border: none;
+            color: #011627;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 0 15px cyan;
+        }
+
+        .game-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, #0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        @media (max-width: 560px) {
+            .game-container {
+                padding: 16px;
+            }
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .question-text {
+                font-size: 1.3rem;
+            }
+            .stats {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="gameContainer">
+    <!-- 开始界面 -->
+    <div id="startScreen" class="start-screen">
+        <div class="game-title">⚡ AIGC 文旅特攻 ⚡</div>
+        <div style="color:#bbd4ff; margin:16px 0; font-size:1rem;">限时问答 · 智能文旅挑战</div>
+        <div style="font-size:0.9rem; background:#00000055; border-radius: 40px; padding:12px; margin:16px 0;">
+            🎯 规则：10道AIGC+文旅核心题，每题限时<span style="color:#ffaa44;">12秒</span><br>
+            ✅ 答对得分，❌ 答错或超时立即结束！<br>
+            🔊 刺激音效 + 倒计时压迫感，证明你的数智素养！
+        </div>
+        <button class="start-btn" id="startGameBtn">🔥 紧急启动 🔥</button>
+        <div style="margin-top: 24px; font-size:0.7rem; opacity:0.6;">基于《旅游新媒体营销》AIGC赋能文旅场景设计</div>
+    </div>
+
+    <!-- 主游戏界面 (初始隐藏) -->
+    <div id="gameplayArea" class="hide">
+        <div class="stats">
+            <div class="score-box"><span>🏆 得分</span><span class="score-value" id="scoreValue">0</span></div>
+            <div class="question-counter"><span>📌 进度</span><span class="q-num" id="qProgress">1</span><span> / <span id="totalQuestions">10</span></span></div>
+            <div class="timer-box"><span>⏱️ 剩余</span><span class="timer-value" id="timerDisplay">12</span><span>s</span></div>
+        </div>
+        <div class="timer-bar-container">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
+        <div class="question-card">
+            <div class="question-text" id="questionText">加载中...</div>
+        </div>
+        <div class="options-grid" id="optionsContainer"></div>
+        <div class="feedback" id="feedbackMsg">⚡ 快速抉择，AI时代争分夺秒 ⚡</div>
+        <div class="control">
+            <button class="restart-btn" id="gameRestartBtn">🔄 重新出战</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ----------------------------- 题库 (源自PPT知识点，难度适中) ---------------------------------
+    const QUESTIONS = [
+        { text: "AIGC 的全称及正确含义是？", options: ["用户生成内容 (UGC)", "专业生产内容 (PGC)", "生成式人工智能 (Generative AI)", "职业生产内容 (OGC)"], correct: 2 },
+        { text: "以下哪项是文本生成技术在文旅新媒体营销中的典型应用？", options: ["自动驾驶道路测试", "快速撰写景点推广文案和新闻快讯", "生成景区3D模型", "语音克隆导游"], correct: 1 },
+        { text: "图像生成技术中最核心的两种深度学习模型是？", options: ["CNN & RNN", "GAN (生成对抗网络) & VAE (变分自编码器)", "LSTM & Transformer", "SVM & KNN"], correct: 1 },
+        { text: "在智能导游场景中，AIGC可以实时提供讲解、路线规划，这属于新质生产力赋能文旅的哪一板块？", options: ["文化遗产数字化", "旅游体验提升——智能导游服务", "内容创作与推广", "旅游管理与需求预测"], correct: 1 },
+        { text: "音频生成技术中，能够学习目标说话人声音特征并转换语音的技术是？", options: ["文本到语音合成(TTS)", "语音克隆", "音频修复", "语音增强"], correct: 1 },
+        { text: "视频生成技术对旅游行业意义重大，以下哪个不是其应用场景？", options: ["虚拟历史重现与宣传片", "游客情绪实时监控", "沉浸式导览体验", "社交媒体个性化短视频"], correct: 1 },
+        { text: "AIGC赋能文化遗产保护与传承的方式包括？", options: ["景区门票自动核验", "生成3D文物模型及虚拟现实体验", "智能客服投诉处理", "客流量预测"], correct: 1 },
+        { text: "以下哪个选项体现了AIGC在旅游运营管理中的价值？", options: ["根据游客偏好生成个性化纪念品设计方案", "预测游客数量并优化资源分配", "为游客拍摄AI写真", "实时翻译多语言标识"], correct: 1 },
+        { text: "新质生产力赋能文旅，利用AIGC生成吸引人的广告视觉创意和营销策略，属于哪个应用方向？", options: ["旅游体验提升", "内容创作与推广", "智能监控与安防", "自动驾驶接驳"], correct: 1 },
+        { text: "生成式人工智能在社交媒体领域能够实现什么效果？", options: ["自动驾驶路径规划", "根据用户兴趣生成个性化推文与互动内容，提升参与感", "完全代替人工客服", "精准控制无人机表演"], correct: 1 }
+    ];
+
+    const TOTAL_QS = QUESTIONS.length;
+    let currentIndex = 0;          // 0-索引
+    let score = 0;
+    let timeLeft = 12;
+    let timerInterval = null;
+    let isGameActive = false;       // 游戏是否进行中（未结束/未完成）
+    let isWaitingNext = false;      // 等待下一题过渡，禁止点击
+    let audioCtx = null;            // Web Audio上下文
+    let soundEnabled = false;       // 是否解锁音频（开始后启用）
+    
+    // DOM 元素
+    const startScreenDiv = document.getElementById('startScreen');
+    const gameplayDiv = document.getElementById('gameplayArea');
+    const startBtn = document.getElementById('startGameBtn');
+    const restartBtn = document.getElementById('gameRestartBtn');
+    const questionTextSpan = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const scoreValueSpan = document.getElementById('scoreValue');
+    const qProgressSpan = document.getElementById('qProgress');
+    const timerDisplaySpan = document.getElementById('timerDisplay');
+    const timerBarDiv = document.getElementById('timerBar');
+    const feedbackMsgDiv = document.getElementById('feedbackMsg');
+    const totalQSpan = document.getElementById('totalQuestions');
+    
+    totalQSpan.innerText = TOTAL_QS;
+    
+    // ---------- 音频初始化 (Web Audio 合成紧张刺激音效) ----------
+    function initAudio() {
+        if (audioCtx) return audioCtx;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+    
+    // 播放正确音效 (清脆叮咚，积极)
+    function playCorrectSound() {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        osc.start();
+        osc.stop(now + 0.35);
+        // 二次谐波短促
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.value = 1100;
+        gain2.gain.setValueAtTime(0.2, now + 0.05);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+        osc2.start(now + 0.05);
+        osc2.stop(now + 0.4);
+    }
+    
+    // 播放错误音效 (刺耳失败)
+    function playWrongSound() {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.value = 220;
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        osc.start();
+        osc.stop(now + 0.45);
+        // 低音震颤
+        const oscB = audioCtx.createOscillator();
+        const gainB = audioCtx.createGain();
+        oscB.connect(gainB);
+        gainB.connect(audioCtx.destination);
+        oscB.type = 'triangle';
+        oscB.frequency.value = 150;
+        gainB.gain.setValueAtTime(0.25, now);
+        gainB.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+        oscB.start();
+        oscB.stop(now + 0.6);
+    }
+    
+    // 倒计时滴答音 (最后三秒紧迫感)
+    function playTickSound() {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.value = 1600;
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        osc.start();
+        osc.stop(now + 0.1);
+    }
+    
+    // 游戏结束音效 (沉重打击)
+    function playGameoverSound() {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.value = 130;
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+        osc.start();
+        osc.stop(now + 0.85);
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.type = 'triangle';
+        osc2.frequency.value = 90;
+        gain2.gain.setValueAtTime(0.3, now + 0.1);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 1.0);
+    }
+    
+    // 胜利通关音效 (凯旋)
+    function playVictorySound() {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        const notes = [523.25, 587.33, 659.25, 783.99];
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.25, now + idx * 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.15 + 0.5);
+            osc.start(now + idx * 0.15);
+            osc.stop(now + idx * 0.15 + 0.45);
+        });
+    }
+    
+    // 停止计时器
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    // 更新时间UI和进度条
+    function updateTimerUI() {
+        timerDisplaySpan.innerText = timeLeft;
+        const percent = (timeLeft / 12) * 100;
+        timerBarDiv.style.width = `${Math.max(0, percent)}%`;
+        if (timeLeft <= 3) {
+            timerBarDiv.classList.add('urgent');
+            timerDisplaySpan.style.color = '#ff6666';
+        } else {
+            timerBarDiv.classList.remove('urgent');
+            timerDisplaySpan.style.color = '#ffcc77';
+        }
+    }
+    
+    // 倒计时主逻辑
+    function startTimer() {
+        if (timerInterval) stopTimer();
+        timerInterval = setInterval(() => {
+            if (!isGameActive || isWaitingNext) return;
+            if (timeLeft <= 1) {
+                // 超时 = 答错，游戏结束
+                if (isGameActive) {
+                    stopTimer();
+                    handleTimeout();
+                }
+            } else {
+                timeLeft--;
+                updateTimerUI();
+                // 紧张音效: 剩余 3,2,1 秒时播放滴答
+                if (timeLeft <= 3 && timeLeft > 0 && soundEnabled) {
+                    playTickSound();
+                }
+            }
+        }, 1000);
+    }
+    
+    // 超时处理
+    function handleTimeout() {
+        if (!isGameActive) return;
+        isGameActive = false;
+        isWaitingNext = true;
+        stopTimer();
+        playWrongSound();
+        feedbackMsgDiv.innerHTML = "💀 超时！挑战中断... 点击「重新出战」继续 💀";
+        feedbackMsgDiv.style.color = "#ff8888";
+        disableOptions(true);
+        endGame(false);
+    }
+    
+    // 结束游戏 (completeAll 表示是否完整通关)
+    function endGame(isVictory) {
+        isGameActive = false;
+        stopTimer();
+        if (isVictory) {
+            playVictorySound();
+            feedbackMsgDiv.innerHTML = `🎉 文旅精英！满分通关！ 得分 ${score}/${TOTAL_QS*10} 🎉 点击重玩再破纪录`;
+            feedbackMsgDiv.style.color = "#aaffdd";
+        } else {
+            if (!isVictory && isGameActive === false && currentIndex <= TOTAL_QS) {
+                // 已经处理过
+                feedbackMsgDiv.innerHTML = feedbackMsgDiv.innerHTML || `❌ 任务失败 · 最终得分 ${score} 分 ❌ 重开挑战提升数智能力`;
+            } else {
+                feedbackMsgDiv.innerHTML = `⚠️ 游戏终止 · 得分 ${score} 分 ⚠️ 点击重新挑战`;
+            }
+            playGameoverSound();
+        }
+        disableOptions(true);
+    }
+    
+    // 加载题目
+    function loadQuestion() {
+        if (currentIndex >= TOTAL_QS) {
+            // 通关胜利
+            if (isGameActive) {
+                isGameActive = false;
+                stopTimer();
+                endGame(true);
+            }
+            return;
+        }
+        const q = QUESTIONS[currentIndex];
+        questionTextSpan.innerText = q.text;
+        // 渲染选项
+        optionsContainer.innerHTML = '';
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            const prefixSpan = document.createElement('span');
+            prefixSpan.className = 'option-prefix';
+            prefixSpan.innerText = String.fromCharCode(65+idx) + '.';
+            const textSpan = document.createElement('span');
+            textSpan.className = 'option-text';
+            textSpan.innerText = opt;
+            btn.appendChild(prefixSpan);
+            btn.appendChild(textSpan);
+            btn.dataset.optIndex = idx;
+            btn.addEventListener('click', () => handleAnswer(idx));
+            optionsContainer.appendChild(btn);
+        });
+        // 重置倒计时数值
+        timeLeft = 12;
+        updateTimerUI();
+        // 启动倒计时 (如果游戏活跃)
+        if (isGameActive) {
+            stopTimer();
+            startTimer();
+        }
+        // 更新进度
+        qProgressSpan.innerText = currentIndex+1;
+    }
+    
+    // 处理作答
+    function handleAnswer(selectedIdx) {
+        if (!isGameActive || isWaitingNext) return;
+        const currentQ = QUESTIONS[currentIndex];
+        const isCorrect = (selectedIdx === currentQ.correct);
+        
+        // 停止计时防止重复响应
+        stopTimer();
+        isWaitingNext = true;
+        
+        if (isCorrect) {
+            // 加分每题10分
+            score += 10;
+            scoreValueSpan.innerText = score;
+            playCorrectSound();
+            feedbackMsgDiv.innerHTML = "✅ 漂亮！ +10分  AI赋能文旅思维正确 ✅";
+            feedbackMsgDiv.style.color = "#b3ffcf";
+            // 视觉高亮正确选项
+            highlightCorrectOption(currentQ.correct);
+        } else {
+            playWrongSound();
+            feedbackMsgDiv.innerHTML = `❌ 失误！正确答案是 ${String.fromCharCode(65+currentQ.correct)}. ${currentQ.options[currentQ.correct]} ❌ 游戏终止`;
+            feedbackMsgDiv.style.color = "#ffb3b3";
+            highlightCorrectOption(currentQ.correct);
+            disableOptions(true);
+            isGameActive = false;
+            endGame(false);
+            return;
+        }
+        
+        disableOptions(true);
+        // 下一题延迟1.2秒
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < TOTAL_QS && isGameActive) {
+                // 继续下一题
+                isWaitingNext = false;
+                disableOptions(false);
+                loadQuestion();
+                feedbackMsgDiv.innerHTML = "⚡ 下一关！保持冷静，快速决策 ⚡";
+                feedbackMsgDiv.style.color = "#ccf4ff";
+            } else if (currentIndex >= TOTAL_QS && isGameActive) {
+                // 通关
+                isGameActive = false;
+                endGame(true);
+            } else if (!isGameActive) {
+                // 游戏已结束不再加载
+                return;
+            }
+        }, 1100);
+    }
+    
+    // 高亮正确选项用于反馈
+    function highlightCorrectOption(correctIdx) {
+        const btns = document.querySelectorAll('.option-btn');
+        if (btns[correctIdx]) {
+            btns[correctIdx].style.borderColor = "#44ffaa";
+            btns[correctIdx].style.backgroundColor = "#226644aa";
+            btns[correctIdx].style.boxShadow = "0 0 10px #0f0";
+        }
+    }
+    
+    function disableOptions(disabled) {
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach(btn => {
+            if (disabled) {
+                btn.disabled = true;
+                btn.classList.add('disabled-opt');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('disabled-opt');
+                btn.style.borderColor = "#2c5f7a";
+                btn.style.backgroundColor = "#101a2b";
+                btn.style.boxShadow = "none";
+            }
+        });
+    }
+    
+    // 重置游戏全部状态
+    function resetAndStart() {
+        // 停止所有计时
+        stopTimer();
+        isGameActive = true;
+        isWaitingNext = false;
+        currentIndex = 0;
+        score = 0;
+        scoreValueSpan.innerText = "0";
+        timeLeft = 12;
+        updateTimerUI();
+        // 清除反馈样式
+        feedbackMsgDiv.innerHTML = "⚡ 智能文旅特攻，极速答题开始！⚡";
+        feedbackMsgDiv.style.color = "#e0f2fe";
+        disableOptions(false);
+        // 加载第一题
+        loadQuestion();
+        // 确保音频解锁状态
+        if (audioCtx && audioCtx.state !== 'running') {
+            audioCtx.resume().then(() => {
+                soundEnabled = true;
+            }).catch(e=>console.log);
+        } else if(audioCtx && audioCtx.state === 'running'){
+            soundEnabled = true;
+        } else {
+            // 尝试初始化
+            initAudio();
+            if(audioCtx) audioCtx.resume().then(()=> soundEnabled=true);
+        }
+        // 强制几毫秒后开启倒计时（loadQuestion里已经调用startTimer）
+    }
+    
+    // 开始游戏 (从开始屏幕进入)
+    function startGame() {
+        // 先初始化音频上下文并在用户手势下解锁
+        initAudio();
+        if (audioCtx) {
+            audioCtx.resume().then(() => {
+                soundEnabled = true;
+                console.log("音频已解锁, 特工听觉就绪");
+            }).catch(err => { soundEnabled = false; });
+        } else {
+            soundEnabled = false;
+        }
+        // 切换界面
+        startScreenDiv.classList.add('hide');
+        gameplayDiv.classList.remove('hide');
+        // 重置所有全局变量
+        if (timerInterval) clearInterval(timerInterval);
+        isGameActive = true;
+        isWaitingNext = false;
+        currentIndex = 0;
+        score = 0;
+        scoreValueSpan.innerText = "0";
+        timeLeft = 12;
+        updateTimerUI();
+        disableOptions(false);
+        loadQuestion();
+        feedbackMsgDiv.innerHTML = "🔥 生死时速！AIGC文旅挑战，开始答题！🔥";
+    }
+    
+    // 重启（游戏内重启按钮）
+    function restartGame() {
+        if (timerInterval) clearInterval(timerInterval);
+        isGameActive = true;
+        isWaitingNext = false;
+        currentIndex = 0;
+        score = 0;
+        scoreValueSpan.innerText = "0";
+        timeLeft = 12;
+        updateTimerUI();
+        disableOptions(false);
+        feedbackMsgDiv.innerHTML = "🔄 重新出征！AI时代勇者归来 🔄";
+        loadQuestion();
+        if (audioCtx && audioCtx.state !== 'running') {
+            audioCtx.resume().then(()=> soundEnabled=true);
+        } else if(audioCtx && audioCtx.state === 'running') soundEnabled = true;
+    }
+    
+    // 绑定事件
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', () => {
+        if (!gameplayDiv.classList.contains('hide')) {
+            restartGame();
+        } else {
+            // 如果开始屏幕状态, 强行开始
+            startGame();
+        }
+    });
+    
+    // 预加载背景音效？不需要额外动作
+</script>
+</body>
+</html>
